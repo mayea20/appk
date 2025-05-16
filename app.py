@@ -18,7 +18,7 @@ def clasificar_producto(nombre):
 
 if uploaded_file:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Factura cargada', use_column_width=True)
+    st.image(image, caption='Factura cargada', use_container_width=True)
 
     text = pytesseract.image_to_string(image, lang='spa')
 
