@@ -1,0 +1,50 @@
+import streamlit as st
+from PIL import Image
+import pytesseract
+import re
+
+st.title("App de Finanzas - Análisis de Facturas")
+
+uploaded_file = st.file_uploader("Sube una imagen de factura", type=["png", "jpg", "jpeg"])
+
+def clasificar_producto(nombre):
+    nombre = nombre.lower()
+    if "kg" in nombre or "g" in nombre:
+        return "por gramo"
+    elif "unidad" in nombre or "u" in nombre:
+        return "por unidad"
+    else:
+        return "desconocido"
+
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    st.image(image, caption='Factura cargada', use_column_width=True)
+
+    text = pytesseract.image_to_string(image, lang='spa')
+
+    st.subheader("Texto detectado:")
+    st.text(text)
+
+    # Buscar fecha (simplificada)
+    fecha = re.search(r"\d{1,2}/\d{1,2}/\d{2,4}", text)
+    st.write("📅 Fecha:", fecha.group() if fecha else "No encontrada")
+
+    # Buscar lugar (simplificado: primera línea del texto)
+    lineas = text.split('\n')
+    lugar = lineas[0] if lineas else "No encontrado"
+    st.write("📍 Lugar:", lugar)
+
+    # Buscar productos y precios
+    st.subheader("🛒 Productos detectados:")
+
+    productos = []
+    for linea in lineas:
+        match = re.match(r"(.*?)(\d+[.,]?\d*)\s?€?", linea)
+        if match:
+            nombre = match.group(1).strip()
+            precio = match.group(2).replace(",", ".")
+            tipo = clasificar_producto(nombre)
+            productos.append((nombre, float(precio), tipo))
+
+    for nombre, precio, tipo in productos:
+        st.write(f"- **{nombre}**: {precio} € ({tipo})")
